@@ -212,7 +212,7 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 	}
 
 	// Get callback URL from config
-	linkQuConfig = config.GetLinkQuConfig()
+	linkQuConfig := config.GetLinkQuConfig()
 	callbackURL := fmt.Sprintf("%s/payments/linkqu/ewallet", linkQuConfig.CallbackURL)
 
 	// Call LinkQu service
