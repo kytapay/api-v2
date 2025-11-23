@@ -192,6 +192,10 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	customerNo := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	// Call PakaiLink service
+	// Get callback URL from config
+	pakaiLinkConfig := config.GetPakaiLinkConfig()
+	callbackURL := fmt.Sprintf("%s/payments/pakailink/va", pakaiLinkConfig.CallbackURL)
+
 	responseData, err := vac.pakaiLinkService.CreateVA(
 		grantID,
 		customerNo,
@@ -199,7 +203,7 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 		reqBody.Amount,
 		expiresAtISO,
 		bankCode,
-		"https://webhook-v2.kytapay.com/pakailink/va",
+		callbackURL,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

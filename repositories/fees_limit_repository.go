@@ -16,7 +16,7 @@ func NewFeesLimitRepository(db *sql.DB) *FeesLimitRepository {
 
 // GetFeesLimitsByTransactionTypeID gets fees limits by transaction type ID
 func (r *FeesLimitRepository) GetFeesLimitsByTransactionTypeID(transactionTypeID int) ([]models.FeesLimit, error) {
-	query := `SELECT id, transaction_type_id, payment_method_id, charge_fixed, charge_percentage, min_limit, max_limit, processing_time 
+	query := `SELECT id, currency_id, transaction_type_id, payment_method_id, charge_fixed, charge_percentage, min_limit, max_limit, processing_time, has_transaction 
 		FROM fees_limits 
 		WHERE transaction_type_id = ?`
 
@@ -31,6 +31,7 @@ func (r *FeesLimitRepository) GetFeesLimitsByTransactionTypeID(transactionTypeID
 		var fee models.FeesLimit
 		err := rows.Scan(
 			&fee.ID,
+			&fee.CurrencyID,
 			&fee.TransactionTypeID,
 			&fee.PaymentMethodID,
 			&fee.ChargeFixed,
@@ -38,6 +39,7 @@ func (r *FeesLimitRepository) GetFeesLimitsByTransactionTypeID(transactionTypeID
 			&fee.MinLimit,
 			&fee.MaxLimit,
 			&fee.ProcessingTime,
+			&fee.HasTransaction,
 		)
 		if err != nil {
 			continue

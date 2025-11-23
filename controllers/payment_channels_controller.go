@@ -191,8 +191,13 @@ func (pcc *PaymentChannelsController) PaymentChannels(c *gin.Context) {
 		}
 
 		settlementTime := "Realtime"
-		if fee.ProcessingTime != 0 {
-			settlementTime = "T+" + strconv.Itoa(fee.ProcessingTime)
+		if fee.ProcessingTime != "" && fee.ProcessingTime != "0" {
+			processingTimeInt, err := strconv.Atoi(fee.ProcessingTime)
+			if err == nil && processingTimeInt != 0 {
+				settlementTime = "T+" + strconv.Itoa(processingTimeInt)
+			} else {
+				settlementTime = "Realtime"
+			}
 		}
 
 		paymentMethods = append(paymentMethods, gin.H{
@@ -219,8 +224,13 @@ func (pcc *PaymentChannelsController) PaymentChannels(c *gin.Context) {
 		}
 
 		settlementTime := "Realtime"
-		if fees.ProcessingTime != 0 {
-			settlementTime = "T+" + strconv.Itoa(fees.ProcessingTime)
+		if fees.ProcessingTime != "" && fees.ProcessingTime != "0" {
+			processingTimeInt, err := strconv.Atoi(fees.ProcessingTime)
+			if err == nil && processingTimeInt != 0 {
+				settlementTime = "T+" + strconv.Itoa(processingTimeInt)
+			} else {
+				settlementTime = "Realtime"
+			}
 		}
 
 		payoutMethods = append(payoutMethods, gin.H{

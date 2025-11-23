@@ -301,7 +301,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			// E-Wallet transfer
 			pakaiLinkConfig := config.GetPakaiLinkConfig()
-			callbackURL := fmt.Sprintf("%s/pakailink/payout/ewallet", pakaiLinkConfig.CallbackURL)
+			callbackURL := fmt.Sprintf("%s/payouts/pakailink/ewallet", pakaiLinkConfig.CallbackURL)
 			responseData, err = ptc.pakaiLinkService.TopupEWallet(
 				payoutID,
 				reqBody.Destination.AccountNumber,
@@ -347,7 +347,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			// Bank transfer
 			pakaiLinkConfig := config.GetPakaiLinkConfig()
-			callbackURL := fmt.Sprintf("%s/pakailink/payout/bank", pakaiLinkConfig.CallbackURL)
+			callbackURL := fmt.Sprintf("%s/payouts/pakailink/bank", pakaiLinkConfig.CallbackURL)
 			responseData, err = ptc.pakaiLinkService.TransferBank(
 				payoutID,
 				reqBody.Destination.AccountNumber,
@@ -425,7 +425,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			// E-Wallet transfer
 			linkQuConfig := config.GetLinkQuConfig()
-			callbackURL := fmt.Sprintf("%s/linkqu/payout/ewallet", linkQuConfig.CallbackURL)
+			callbackURL := fmt.Sprintf("%s/payouts/linkqu/ewallet", linkQuConfig.CallbackURL)
 			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
 			responseData, err = ptc.linkQuService.EWalletReloadPayment(
 				ewalletCode,
@@ -473,7 +473,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			// Bank transfer
 			linkQuConfig := config.GetLinkQuConfig()
-			callbackURL := fmt.Sprintf("%s/linkqu/payout/bank", linkQuConfig.CallbackURL)
+			callbackURL := fmt.Sprintf("%s/payouts/linkqu/bank", linkQuConfig.CallbackURL)
 			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
 			responseData, err = ptc.linkQuService.BankWithdrawPayment(
 				bankCode,

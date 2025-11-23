@@ -168,6 +168,10 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 	// Generate customer ID (unique)
 	customerID := fmt.Sprintf("%d", time.Now().UnixNano())
 
+	// Get callback URL from config
+	linkQuConfig := config.GetLinkQuConfig()
+	callbackURL := fmt.Sprintf("%s/payments/linkqu/qris", linkQuConfig.CallbackURL)
+
 	// Call LinkQu service
 	responseData, err := qpc.linkQuService.CreateQRIS(
 		grantID,
@@ -175,7 +179,7 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 		merchant.BusinessName,
 		int64(reqBody.Amount),
 		expiresAtLinkQu,
-		"https://webhook-v2.kytapay.com/linkqu/qris",
+		callbackURL,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

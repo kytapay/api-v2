@@ -111,13 +111,14 @@ func (ph *PaymentHelper) GetPaymentMethodByCode(code string) (*models.PaymentMet
 
 // GetFeesLimit gets fees limit for payment method
 func (ph *PaymentHelper) GetFeesLimit(transactionTypeID, paymentMethodID int) (*models.FeesLimit, error) {
-	query := `SELECT id, transaction_type_id, payment_method_id, charge_fixed, charge_percentage, min_limit, max_limit, processing_time 
+	query := `SELECT id, currency_id, transaction_type_id, payment_method_id, charge_fixed, charge_percentage, min_limit, max_limit, processing_time, has_transaction 
 		FROM fees_limits 
 		WHERE transaction_type_id = ? AND payment_method_id = ?`
 	
 	var fee models.FeesLimit
 	err := ph.db.QueryRow(query, transactionTypeID, paymentMethodID).Scan(
 		&fee.ID,
+		&fee.CurrencyID,
 		&fee.TransactionTypeID,
 		&fee.PaymentMethodID,
 		&fee.ChargeFixed,
@@ -125,6 +126,7 @@ func (ph *PaymentHelper) GetFeesLimit(transactionTypeID, paymentMethodID int) (*
 		&fee.MinLimit,
 		&fee.MaxLimit,
 		&fee.ProcessingTime,
+		&fee.HasTransaction,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil

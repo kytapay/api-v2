@@ -207,6 +207,10 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 		return
 	}
 
+	// Get callback URL from config
+	linkQuConfig := config.GetLinkQuConfig()
+	callbackURL := fmt.Sprintf("%s/payments/linkqu/ewallet", linkQuConfig.CallbackURL)
+
 	// Call LinkQu service
 	responseData, err := ewc.linkQuService.CreateEWallet(
 		grantID,
@@ -215,7 +219,7 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 		int64(reqBody.Amount),
 		expiresAtLinkQu,
 		retailCode,
-		"https://webhook-v2.kytapay.com/linkqu/ewallet",
+		callbackURL,
 		reqBody.PhoneNumber,
 	)
 	if err != nil {
