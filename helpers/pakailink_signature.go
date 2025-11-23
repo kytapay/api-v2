@@ -33,13 +33,37 @@ func GenerateAsymmetricSignature(clientKey string) (string, string, error) {
 		return "", "", fmt.Errorf("failed to decode PEM block")
 	}
 
-	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to parse private key: %v", err)
+	var rsaPrivateKey *rsa.PrivateKey
+	var err error
+
+	// Try PKCS#8 format first (PRIVATE KEY)
+	if block.Type == "PRIVATE KEY" {
+		privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err == nil {
+			rsaKey, ok := privateKey.(*rsa.PrivateKey)
+			if ok {
+				rsaPrivateKey = rsaKey
+			}
+		}
 	}
 
-	rsaPrivateKey, ok := privateKey.(*rsa.PrivateKey)
-	if !ok {
+	// If PKCS#8 failed or not PKCS#8 format, try PKCS#1 format (RSA PRIVATE KEY)
+	if rsaPrivateKey == nil {
+		if block.Type == "RSA PRIVATE KEY" {
+			rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to parse PKCS#1 private key: %v", err)
+			}
+		} else {
+			// Try PKCS#1 anyway (in case block.Type is not set correctly)
+			rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to parse private key (tried both PKCS#8 and PKCS#1): %v", err)
+			}
+		}
+	}
+
+	if rsaPrivateKey == nil {
 		return "", "", fmt.Errorf("not an RSA private key")
 	}
 
