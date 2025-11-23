@@ -183,7 +183,11 @@ func (mic *MerchantInformationController) Informations(c *gin.Context) {
 	}
 
 	// Get current time in Asia/Jakarta timezone
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	requestTime := time.Now().In(loc).Format(time.RFC3339)
 
 	c.JSON(http.StatusOK, gin.H{

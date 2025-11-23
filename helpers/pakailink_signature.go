@@ -44,7 +44,11 @@ func GenerateAsymmetricSignature(clientKey string) (string, string, error) {
 	}
 
 	// Generate timestamp
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	timestamp := time.Now().In(loc).Format("2006-01-02T15:04:05+07:00")
 
 	// Create string to sign: X-CLIENT-KEY|X-TIMESTAMP

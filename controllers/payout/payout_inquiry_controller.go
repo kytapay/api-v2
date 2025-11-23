@@ -181,7 +181,11 @@ func (pic *PayoutInquiryController) ProcessInquiry(c *gin.Context) {
 		BankNumber:    &reqBody.Destination.AccountNumber,
 	}
 
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	now := time.Now().In(loc)
 	requestTime := now.Format(time.RFC3339)
 

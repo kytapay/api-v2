@@ -154,7 +154,11 @@ func (pdc *PayoutDetailsController) GetDetail(c *gin.Context) {
 	c.Header("X-AUTH-TOKEN", apiKey)
 
 	// Format dates
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	var createdAtISO string
 
 	if detailData.CreatedAt != nil {

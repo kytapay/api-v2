@@ -40,7 +40,11 @@ func (pls *PakaiLinkService) BankAccountInquiry(partnerRef, accountNumber, bankC
 	}
 
 	// Generate timestamp
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	timestamp := time.Now().In(loc).Format("2006-01-02T15:04:05+07:00")
 
 	// Generate symmetric signature
@@ -119,7 +123,11 @@ func (pls *PakaiLinkService) TransferBank(partnerRef, accountNumber, bankCode, s
 	}
 
 	// Generate timestamp
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	timestamp := time.Now().In(loc).Format("2006-01-02T15:04:05+07:00")
 
 	// Generate symmetric signature
@@ -190,7 +198,11 @@ func (pls *PakaiLinkService) EWalletAccountInquiry(partnerRef, customerNumber, p
 	}
 
 	// Generate timestamp
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	timestamp := time.Now().In(loc).Format("2006-01-02T15:04:05+07:00")
 
 	// Generate symmetric signature
@@ -266,7 +278,11 @@ func (pls *PakaiLinkService) TopupEWallet(partnerRef, customerNumber, productCod
 	}
 
 	// Generate timestamp
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	timestamp := time.Now().In(loc).Format("2006-01-02T15:04:05+07:00")
 
 	// Generate symmetric signature

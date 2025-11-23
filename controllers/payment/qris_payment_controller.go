@@ -159,7 +159,11 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 		expiresTime = *reqBody.ExpiresTime
 	}
 
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback to UTC if timezone data not available
+		loc = time.UTC
+	}
 	now := time.Now().In(loc)
 	expiresAt := now.Add(time.Duration(expiresTime) * time.Second)
 	expiresAtStr := expiresAt.Format("2006-01-02 15:04:05")
