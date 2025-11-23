@@ -296,25 +296,28 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 
 	requestTime := now.Format(time.RFC3339)
 
+	// Build response with consistent field order
+	responseData := gin.H{
+		"id":           grantID,
+		"reference_id": reqBody.ReferenceID,
+		"amount":       reqBody.Amount,
+		"payment_data": gin.H{
+			"qr_string": qrString,
+		},
+		"merchant_url": gin.H{
+			"notify_url":  reqBody.NotifyURL,
+			"success_url": reqBody.SuccessURL,
+			"failed_url":  reqBody.FailedURL,
+		},
+		"checkout_url": checkoutURL,
+		"expires_at":   expiresAt.Format(time.RFC3339),
+		"request_time": requestTime,
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"response_code":    "2000500",
 		"response_message": "Successful",
-		"response_data": gin.H{
-			"id":           grantID,
-			"reference_id": reqBody.ReferenceID,
-			"amount":       reqBody.Amount,
-			"payment_data": gin.H{
-				"qr_string": qrString,
-			},
-			"merchant_url": gin.H{
-				"notify_url":  reqBody.NotifyURL,
-				"success_url": reqBody.SuccessURL,
-				"failed_url":  reqBody.FailedURL,
-			},
-			"checkout_url": checkoutURL,
-			"expires_at":   expiresAt.Format(time.RFC3339),
-			"request_time": requestTime,
-		},
+		"response_data":   responseData,
 	})
 }
 
