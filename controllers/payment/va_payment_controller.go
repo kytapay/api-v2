@@ -210,6 +210,8 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 		callbackURL,
 	)
 	if err != nil {
+		// Log error for debugging
+		fmt.Printf("[ERROR] PakaiLink CreateVA failed: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"response_code":    "5000401",
 			"response_message": "Internal Server Error",
@@ -219,7 +221,10 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 
 	// Check response code
 	responseCode, _ := responseData["responseCode"].(string)
+	responseMessage, _ := responseData["responseMessage"].(string)
 	if responseCode != "2002700" {
+		// Log error for debugging
+		fmt.Printf("[ERROR] PakaiLink CreateVA response error: code=%s, message=%s, full_response=%+v\n", responseCode, responseMessage, responseData)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"response_code":    "5000401",
 			"response_message": "Internal Server Error",
