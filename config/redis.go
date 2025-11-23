@@ -18,20 +18,24 @@ func InitRedis() *redis.Client {
 	}
 
 	redisPassword := os.Getenv("REDIS_PASSWORD")
-	if redisPassword == "" {
-		redisPassword = "" // No password
-	}
-
-	client := redis.NewClient(&redis.Options{
+	
+	// Build Redis options
+	options := &redis.Options{
 		Addr:         redisAddr,
-		Password:     redisPassword,
 		DB:           0,
 		DialTimeout:  5 * time.Second,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 3 * time.Second,
 		PoolSize:     10,
 		MinIdleConns: 5,
-	})
+	}
+	
+	// Only set password if it's not empty
+	if redisPassword != "" {
+		options.Password = redisPassword
+	}
+
+	client := redis.NewClient(options)
 
 	// Test the connection with retry
 	var err error
