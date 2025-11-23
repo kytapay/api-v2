@@ -27,10 +27,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// Initialize Redis
-	redisClient := config.InitRedis()
-	defer redisClient.Close()
-
 	// Initialize Gin router
 	r := gin.Default()
 
