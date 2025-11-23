@@ -146,18 +146,23 @@ func (pls *PakaiLinkService) CreateVA(partnerRef, customerNo, virtualAccountName
 
 	resp, err := pls.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("HTTP request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Log response for debugging
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("[ERROR] PakaiLink CreateVA HTTP error: status=%d, body=%s\n", resp.StatusCode, string(body))
 	}
 
 	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse response JSON: %w, body: %s", err, string(body))
 	}
 
 	return result, nil
