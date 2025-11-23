@@ -11,7 +11,7 @@ missing go.sum entry for module providing package...
 ### 1. Pull Latest Code
 
 ```bash
-cd /opt/kytapay-api
+cd /opt/api-v2
 git pull origin main
 ```
 
@@ -50,7 +50,7 @@ source ~/.bashrc
 go version
 
 # Generate go.sum
-cd /opt/kytapay-api
+cd /opt/api-v2
 go mod tidy
 go mod verify
 ```

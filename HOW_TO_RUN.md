@@ -331,7 +331,7 @@ After=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=/opt/kytapay
+WorkingDirectory=/opt/api-v2
 ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=0
@@ -355,7 +355,7 @@ Docker Compose sudah menggunakan `restart: unless-stopped`, jadi container akan 
 ### 4. Useful Commands
 
 ```bash
-cd /opt/kytapay/api-v2
+cd /opt/api-v2
 
 # Check Docker service status
 sudo systemctl status docker
