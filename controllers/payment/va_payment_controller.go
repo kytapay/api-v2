@@ -345,7 +345,7 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	requestTime := now.Format(time.RFC3339)
 
 	// Build response with consistent field order
-	responseData := gin.H{
+	responseDataMap := gin.H{
 		"id":           grantID,
 		"reference_id": reqBody.ReferenceID,
 		"amount":       reqBody.Amount,
@@ -367,7 +367,7 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"response_code":    "2000400",
 		"response_message": "Successful",
-		"response_data":   responseData,
+		"response_data":   responseDataMap,
 	})
 }
 

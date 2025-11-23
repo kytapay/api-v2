@@ -297,7 +297,7 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 	requestTime := now.Format(time.RFC3339)
 
 	// Build response with consistent field order
-	responseData := gin.H{
+	responseDataMap := gin.H{
 		"id":           grantID,
 		"reference_id": reqBody.ReferenceID,
 		"amount":       reqBody.Amount,
@@ -317,7 +317,7 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"response_code":    "2000500",
 		"response_message": "Successful",
-		"response_data":   responseData,
+		"response_data":   responseDataMap,
 	})
 }
 
