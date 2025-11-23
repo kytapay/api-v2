@@ -286,8 +286,8 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 	qpc.tokenRepo.DisableToken(apiKey)
 	c.Header("X-AUTH-TOKEN", apiKey)
 
-	linkQuConfig := config.GetLinkQuConfig()
-	checkoutURL := fmt.Sprintf("%s/web/v1/%s", linkQuConfig.BaseURL, grantID)
+	linkQuConfigFinal := config.GetLinkQuConfig()
+	checkoutURL := fmt.Sprintf("%s/web/v1/%s", linkQuConfigFinal.BaseURL, grantID)
 
 	requestTime := now.Format(time.RFC3339)
 

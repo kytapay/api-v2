@@ -185,7 +185,10 @@ func (pcc *PaymentChannelsController) PaymentChannels(c *gin.Context) {
 	// Build payment methods array
 	paymentMethods := []gin.H{}
 	for _, fee := range feeLimits {
-		paymentMethod, err := pcc.paymentMethodRepo.GetPaymentMethodByID(fee.PaymentMethodID)
+		if fee.PaymentMethodID == nil {
+			continue
+		}
+		paymentMethod, err := pcc.paymentMethodRepo.GetPaymentMethodByID(*fee.PaymentMethodID)
 		if err != nil || paymentMethod == nil {
 			continue
 		}
@@ -218,7 +221,10 @@ func (pcc *PaymentChannelsController) PaymentChannels(c *gin.Context) {
 	// Build payout methods array
 	payoutMethods := []gin.H{}
 	for _, fees := range feePayouts {
-		payoutMethod, err := pcc.paymentMethodRepo.GetPaymentMethodByID(fees.PaymentMethodID)
+		if fees.PaymentMethodID == nil {
+			continue
+		}
+		payoutMethod, err := pcc.paymentMethodRepo.GetPaymentMethodByID(*fees.PaymentMethodID)
 		if err != nil || payoutMethod == nil {
 			continue
 		}

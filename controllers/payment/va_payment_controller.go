@@ -216,7 +216,6 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	// Check response code
 	responseCode, _ := responseData["responseCode"].(string)
 	if responseCode != "2002700" {
-		responseMessage, _ := responseData["responseMessage"].(string)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"response_code":    "5000401",
 			"response_message": "Internal Server Error",
@@ -330,8 +329,8 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	vac.tokenRepo.DisableToken(apiKey)
 	c.Header("X-AUTH-TOKEN", apiKey)
 
-	pakaiLinkConfig := config.GetPakaiLinkConfig()
-	checkoutURL := fmt.Sprintf("%s/web/v1/%s", pakaiLinkConfig.BaseURL, grantID)
+	pakaiLinkConfigFinal := config.GetPakaiLinkConfig()
+	checkoutURL := fmt.Sprintf("%s/web/v1/%s", pakaiLinkConfigFinal.BaseURL, grantID)
 
 	requestTime := now.Format(time.RFC3339)
 

@@ -344,8 +344,8 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 	ewc.tokenRepo.DisableToken(apiKey)
 	c.Header("X-AUTH-TOKEN", apiKey)
 
-	linkQuConfig := config.GetLinkQuConfig()
-	checkoutURLFinal := fmt.Sprintf("%s/web/v1/%s", linkQuConfig.BaseURL, grantID)
+	linkQuConfigFinal := config.GetLinkQuConfig()
+	checkoutURLFinal := fmt.Sprintf("%s/web/v1/%s", linkQuConfigFinal.BaseURL, grantID)
 
 	requestTime := now.Format(time.RFC3339)
 
