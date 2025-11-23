@@ -33,8 +33,18 @@ func InitRedis() *redis.Client {
 		MinIdleConns: 5,
 	})
 
-	// Test the connection
-	_, err := client.Ping(ctx).Result()
+	// Test the connection with retry
+	var err error
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		_, err = client.Ping(ctx).Result()
+		if err == nil {
+			break
+		}
+		if i < maxRetries-1 {
+			time.Sleep(2 * time.Second)
+		}
+	}
 	if err != nil {
 		panic("Failed to connect to Redis: " + err.Error())
 	}
