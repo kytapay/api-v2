@@ -32,9 +32,6 @@ main
 *_test.go
 *.test
 
-# RSA Keys
-pkcs8_rsa_private_key.pem
-
 # Docker
 Dockerfile
 docker-compose.yml

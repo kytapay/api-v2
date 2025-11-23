@@ -36,5 +36,5 @@ Thumbs.db
 *.log
 
 # RSA Private Key (user will fill this)
-# pkcs8_rsa_private_key.pem
+pkcs8_rsa_private_key.pem
 
