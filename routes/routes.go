@@ -23,12 +23,15 @@ func SetupRoutes(
 	payoutDetailsController *payout.PayoutDetailsController,
 	balanceController *controllers.BalanceController,
 ) {
-	// Health check
+	// Health check (support both GET and HEAD for Docker healthcheck)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
 			"service": "KytaPay API v2",
 		})
+	})
+	r.HEAD("/health", func(c *gin.Context) {
+		c.Status(200)
 	})
 
 	// Balance check (X-ADMIN-KEY required)
