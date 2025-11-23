@@ -160,9 +160,15 @@ sudo chown $USER:$USER /opt/kytapay-api
 cd /opt/kytapay-api
 
 # Clone repository API (ganti dengan URL repo Anda)
-git clone https://github.com/yourusername/kytapay-api-v2.git .
+git clone https://github.com/kytapay/api-v2.git .
 # atau jika sudah ada, pull terbaru
 git pull origin main
+
+# Pastikan go.sum ada dan lengkap
+ls -la go.sum
+# Jika go.sum tidak ada atau kosong, jalankan:
+go mod tidy
+go mod verify
 ```
 
 ### 2. Verify Docker Setup
@@ -212,11 +218,18 @@ Pastikan file `.env` sudah dibuat di kedua folder (lihat bagian Setup Environmen
 ```bash
 cd /opt/kytapay-api
 
+# Pastikan go.sum ada dan lengkap sebelum build
+if [ ! -f go.sum ] || [ ! -s go.sum ]; then
+    echo "go.sum tidak ditemukan atau kosong, menjalankan go mod tidy..."
+    go mod tidy
+    go mod verify
+fi
+
 # Build image untuk API
 docker compose build
 
-# Build tanpa cache (jika ada masalah)
-docker compose build --no-cache
+# Jika masih error, coba build tanpa cache
+# docker compose build --no-cache
 ```
 
 ### 3. Run dengan Docker Compose
@@ -573,6 +586,32 @@ cat /opt/kytapay-api/.env
 docker compose up api-v2
 ```
 
+### 1a. Docker Build Error (go.sum missing)
+
+Jika error saat build seperti "missing go.sum entry":
+
+```bash
+cd /opt/kytapay-api
+
+# Pull latest code
+git pull origin main
+
+# Pastikan go.sum ada
+ls -la go.sum
+
+# Jika go.sum tidak ada atau kosong, generate ulang
+go mod tidy
+go mod verify
+
+# Commit dan push go.sum (jika perlu)
+git add go.sum go.mod
+git commit -m "Update go.sum"
+git push origin main
+
+# Build ulang
+docker compose build --no-cache
+```
+
 ### 2. Database Connection Error
 
 ```bash
@@ -670,6 +709,13 @@ docker stats
 ```bash
 cd /opt/kytapay-api
 git pull origin main
+
+# Pastikan go.sum tetap ada setelah pull
+if [ ! -f go.sum ] || [ ! -s go.sum ]; then
+    echo "go.sum hilang setelah pull, menjalankan go mod tidy..."
+    go mod tidy
+    go mod verify
+fi
 ```
 
 ### 2. Rebuild Docker Image
