@@ -1,0 +1,22 @@
+[Unit]
+Description=KytaPay API v2 Service
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=kytapay
+Group=kytapay
+WorkingDirectory=/opt/kytapay/api-v2
+ExecStart=/opt/kytapay/api-v2/api-v2
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kytapay-api
+
+# Environment variables (optional, bisa juga pakai .env file)
+Environment="GIN_MODE=release"
+
+[Install]
+WantedBy=multi-user.target
+

@@ -38,3 +38,23 @@ Thumbs.db
 # RSA Private Key (user will fill this)
 pkcs8_rsa_private_key.pem
 
+# Binary files
+api-v2
+webhook-v2
+*.exe
+*.exe~
+*.bin
+*.so
+*.dll
+*.dylib
+main
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
+

@@ -17,22 +17,22 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-s -w" -o api-v2 .
 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates and wget for HTTPS and healthcheck
+RUN apk --no-cache add ca-certificates wget
 
 WORKDIR /root/
 
 # Copy the binary from builder
-COPY --from=builder /app/main .
+COPY --from=builder /app/api-v2 .
 
 # Expose port
 EXPOSE 8080
 
 # Run the application
-CMD ["./main"]
+CMD ["./api-v2"]
 

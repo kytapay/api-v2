@@ -1,45 +1,23 @@
 version: '3.8'
 
 services:
-  api:
+  api-v2:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: kytapay-api-v2
+    restart: unless-stopped
     ports:
       - "8080:8080"
-    environment:
-      - PORT=8080
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT:-3306}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - REDIS_ADDR=redis:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      - redis
-    networks:
-      - kytapay-network
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    container_name: kytapay-redis
-    ports:
-      - "6379:6379"
+    env_file:
+      - ./.env
     volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes
-    networks:
-      - kytapay-network
-    restart: unless-stopped
-
-volumes:
-  redis-data:
-
-networks:
-  kytapay-network:
-    driver: bridge
+      # Mount RSA private key jika diperlukan
+      - ./pkcs8_rsa_private_key.pem:/root/pkcs8_rsa_private_key.pem:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
