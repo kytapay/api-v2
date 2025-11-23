@@ -252,7 +252,7 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	}
 
 	accountNumber := virtualAccountNo
-	accountName := fmt.Sprintf("%s - KytaPay", merchant.BusinessName)
+	accountName := fmt.Sprintf("%s", merchant.BusinessName)
 	bankCodeResp := bankCodeUpper
 
 	// Create transaction info
