@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kytapay/api-v2/config"
 	"github.com/kytapay/api-v2/helpers"
 )
 
