@@ -34,7 +34,6 @@ func GenerateAsymmetricSignature(clientKey string) (string, string, error) {
 	}
 
 	var rsaPrivateKey *rsa.PrivateKey
-	var err error
 
 	// Try PKCS#8 format first (PRIVATE KEY)
 	if block.Type == "PRIVATE KEY" {
@@ -49,6 +48,7 @@ func GenerateAsymmetricSignature(clientKey string) (string, string, error) {
 
 	// If PKCS#8 failed or not PKCS#8 format, try PKCS#1 format (RSA PRIVATE KEY)
 	if rsaPrivateKey == nil {
+		var err error
 		if block.Type == "RSA PRIVATE KEY" {
 			rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 			if err != nil {
