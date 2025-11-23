@@ -12,6 +12,7 @@ type PakaiLinkConfig struct {
 	ClientSecret string
 	AccountNo    string
 	CallbackURL  string
+	CheckoutURL  string
 }
 
 var pakaiLinkConfig *PakaiLinkConfig
@@ -26,6 +27,7 @@ func GetPakaiLinkConfig() *PakaiLinkConfig {
 			ClientSecret: os.Getenv("PAKAILINK_CLIENT_SECRET"),
 			AccountNo:    os.Getenv("PAKAILINK_ACCOUNT_NO"),
 			CallbackURL:  os.Getenv("PAKAILINK_CALLBACK_URL"),
+			CheckoutURL:  os.Getenv("CHECKOUT_URL"),
 		}
 	}
 	return pakaiLinkConfig

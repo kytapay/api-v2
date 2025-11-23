@@ -11,6 +11,7 @@ type LinkQuConfig struct {
 	ClientID     string
 	ClientSecret string
 	CallbackURL  string
+	CheckoutURL  string
 }
 
 var linkQuConfig *LinkQuConfig
@@ -24,6 +25,7 @@ func GetLinkQuConfig() *LinkQuConfig {
 			ClientID:    os.Getenv("LINKQU_CLIENT_ID"),
 			ClientSecret: os.Getenv("LINKQU_CLIENT_SECRET"),
 			CallbackURL: os.Getenv("LINKQU_CALLBACK_URL"),
+			CheckoutURL: os.Getenv("CHECKOUT_URL"),
 		}
 	}
 	return linkQuConfig

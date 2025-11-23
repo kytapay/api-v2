@@ -338,8 +338,9 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	vac.tokenRepo.DisableToken(apiKey)
 	c.Header("X-AUTH-TOKEN", apiKey)
 
+	// Get checkout URL from config
 	pakaiLinkConfigFinal := config.GetPakaiLinkConfig()
-	checkoutURL := fmt.Sprintf("%s/web/v1/%s", pakaiLinkConfigFinal.BaseURL, grantID)
+	checkoutURL := fmt.Sprintf("%s/%s", pakaiLinkConfigFinal.CheckoutURL, grantID)
 
 	requestTime := now.Format(time.RFC3339)
 
@@ -347,9 +348,9 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 		"response_code":    "2000400",
 		"response_message": "Successful",
 		"response_data": gin.H{
-			"id":          grantID,
+			"id":           grantID,
 			"reference_id": reqBody.ReferenceID,
-			"amount":      reqBody.Amount,
+			"amount":       reqBody.Amount,
 			"payment_data": gin.H{
 				"bank_code":      bankCodeResp,
 				"account_number": accountNumber,

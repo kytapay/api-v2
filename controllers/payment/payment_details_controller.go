@@ -209,8 +209,9 @@ func (pdc *PaymentDetailsController) GetDetail(c *gin.Context) {
 		}
 	}
 
+	// Get checkout URL from config
 	linkQuConfig := config.GetLinkQuConfig()
-	checkoutURL := fmt.Sprintf("%s/web/v1/%s", linkQuConfig.BaseURL, detailData.GrantID)
+	checkoutURL := fmt.Sprintf("%s/%s", linkQuConfig.CheckoutURL, detailData.GrantID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"response_code":    "2000700",
