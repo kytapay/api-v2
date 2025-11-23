@@ -212,7 +212,7 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 	}
 
 	// Get callback URL from config
-	linkQuConfig := config.GetLinkQuConfig()
+	linkQuConfig = config.GetLinkQuConfig()
 	callbackURL := fmt.Sprintf("%s/payments/linkqu/ewallet", linkQuConfig.CallbackURL)
 
 	// Call LinkQu service
@@ -250,7 +250,6 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 	var checkoutURL string
 	if channelCodeUpper == "OVO" {
 		// OVO uses push notification, no URL
-		linkQuConfig := config.GetLinkQuConfig()
 		checkoutURL = fmt.Sprintf("%s/web/v1/%s", linkQuConfig.BaseURL, grantID)
 	} else {
 		checkoutURL = urlPayment
@@ -349,8 +348,8 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 	c.Header("X-AUTH-TOKEN", apiKey)
 
 	// Get checkout URL from config
-	linkQuConfigFinal := config.GetLinkQuConfig()
-	checkoutURLFinal := fmt.Sprintf("%s/%s", linkQuConfigFinal.CheckoutURL, grantID)
+	linkQuConfig = config.GetLinkQuConfig()
+	checkoutURLFinal := fmt.Sprintf("%s/%s", linkQuConfig.CheckoutURL, grantID)
 
 	requestTime := now.Format(time.RFC3339)
 

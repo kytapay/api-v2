@@ -339,8 +339,8 @@ func (vac *VAPaymentController) CreateVA(c *gin.Context) {
 	c.Header("X-AUTH-TOKEN", apiKey)
 
 	// Get checkout URL from config
-	pakaiLinkConfigFinal := config.GetPakaiLinkConfig()
-	checkoutURL := fmt.Sprintf("%s/%s", pakaiLinkConfigFinal.CheckoutURL, grantID)
+	pakaiLinkConfig = config.GetPakaiLinkConfig()
+	checkoutURL := fmt.Sprintf("%s/%s", pakaiLinkConfig.CheckoutURL, grantID)
 
 	requestTime := now.Format(time.RFC3339)
 
