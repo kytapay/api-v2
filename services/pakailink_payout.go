@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -53,6 +54,12 @@ func (pls *PakaiLinkService) BankAccountInquiry(partnerRef, accountNumber, bankC
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to PakaiLink
+	log.Printf("[PAKAILINK BANK ACCOUNT INQUIRY] Request URL: %s", url)
+	log.Printf("[PAKAILINK BANK ACCOUNT INQUIRY] Request body: %s", string(jsonData))
+	log.Printf("[PAKAILINK BANK ACCOUNT INQUIRY] Headers: Authorization=Bearer %s, X-TIMESTAMP=%s, X-PARTNER-ID=%s, X-EXTERNAL-ID=%s, CHANNEL-ID=%s, X-SIGNATURE=%s", 
+		accessToken, timestamp, pls.config.PartnerID, partnerRef, pls.config.ChannelID, signature)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -137,6 +144,12 @@ func (pls *PakaiLinkService) TransferBank(partnerRef, accountNumber, bankCode, s
 		return nil, err
 	}
 
+	// Log request to PakaiLink
+	log.Printf("[PAKAILINK TRANSFER BANK] Request URL: %s", url)
+	log.Printf("[PAKAILINK TRANSFER BANK] Request body: %s", string(jsonData))
+	log.Printf("[PAKAILINK TRANSFER BANK] Headers: Authorization=Bearer %s, X-TIMESTAMP=%s, X-PARTNER-ID=%s, X-EXTERNAL-ID=%s, CHANNEL-ID=%s, X-SIGNATURE=%s", 
+		accessToken, timestamp, pls.config.PartnerID, partnerRef, pls.config.ChannelID, signature)
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
@@ -211,6 +224,12 @@ func (pls *PakaiLinkService) EWalletAccountInquiry(partnerRef, customerNumber, p
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to PakaiLink
+	log.Printf("[PAKAILINK E-WALLET ACCOUNT INQUIRY] Request URL: %s", url)
+	log.Printf("[PAKAILINK E-WALLET ACCOUNT INQUIRY] Request body: %s", string(jsonData))
+	log.Printf("[PAKAILINK E-WALLET ACCOUNT INQUIRY] Headers: Authorization=Bearer %s, X-TIMESTAMP=%s, X-PARTNER-ID=%s, X-EXTERNAL-ID=%s, CHANNEL-ID=%s, X-SIGNATURE=%s", 
+		accessToken, timestamp, pls.config.PartnerID, partnerRef, pls.config.ChannelID, signature)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -291,6 +310,12 @@ func (pls *PakaiLinkService) TopupEWallet(partnerRef, customerNumber, productCod
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to PakaiLink
+	log.Printf("[PAKAILINK E-WALLET TOPUP] Request URL: %s", url)
+	log.Printf("[PAKAILINK E-WALLET TOPUP] Request body: %s", string(jsonData))
+	log.Printf("[PAKAILINK E-WALLET TOPUP] Headers: Authorization=Bearer %s, X-TIMESTAMP=%s, X-PARTNER-ID=%s, X-EXTERNAL-ID=%s, CHANNEL-ID=%s, X-SIGNATURE=%s", 
+		accessToken, timestamp, pls.config.PartnerID, partnerRef, pls.config.ChannelID, signature)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {

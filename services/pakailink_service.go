@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -44,6 +45,11 @@ func (pls *PakaiLinkService) GetAccessToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// Log request to PakaiLink
+	log.Printf("[PAKAILINK ACCESS TOKEN] Request URL: %s", url)
+	log.Printf("[PAKAILINK ACCESS TOKEN] Request body: %s", string(jsonData))
+	log.Printf("[PAKAILINK ACCESS TOKEN] Headers: X-TIMESTAMP=%s, X-CLIENT-KEY=%s, X-SIGNATURE=%s", timestamp, pls.config.ClientKey, signature)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -130,6 +136,12 @@ func (pls *PakaiLinkService) CreateVA(partnerRef, customerNo, virtualAccountName
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to PakaiLink
+	log.Printf("[PAKAILINK CREATE VA] Request URL: %s", url)
+	log.Printf("[PAKAILINK CREATE VA] Request body: %s", string(jsonData))
+	log.Printf("[PAKAILINK CREATE VA] Headers: Authorization=Bearer %s, X-TIMESTAMP=%s, X-PARTNER-ID=%s, X-EXTERNAL-ID=%s, CHANNEL-ID=%s, X-SIGNATURE=%s", 
+		accessToken, timestamp, pls.config.PartnerID, partnerRef, pls.config.ChannelID, signature)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {

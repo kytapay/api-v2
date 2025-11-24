@@ -2,9 +2,7 @@ package payment
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -121,12 +119,6 @@ func (ewc *EWalletPaymentController) CreateEWallet(c *gin.Context) {
 		})
 		return
 	}
-
-	// Log request
-	reqBodyJSON, _ := json.Marshal(reqBody)
-	log.Printf("[E-WALLET PAYMENT] Request received: referenceID=%s, amount=%.2f, channelCode=%s, phoneNumber=%v, expiresTime=%v", 
-		reqBody.ReferenceID, reqBody.Amount, reqBody.ChannelCode, reqBody.PhoneNumber, reqBody.ExpiresTime)
-	log.Printf("[E-WALLET PAYMENT] Full request body: %s", string(reqBodyJSON))
 
 	if reqBody.Amount < 10000 || reqBody.Amount > 500000000 {
 		c.JSON(http.StatusForbidden, gin.H{

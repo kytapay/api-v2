@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -44,6 +45,10 @@ func (lqs *LinkQuService) CreateQRIS(partnerRef, customerID, customerName string
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to LinkQu
+	log.Printf("[LINKQU QRIS] Request URL: %s", url)
+	log.Printf("[LINKQU QRIS] Request body: %s", string(jsonData))
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -101,6 +106,10 @@ func (lqs *LinkQuService) CreateEWallet(partnerRef, customerID, customerName str
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to LinkQu
+	log.Printf("[LINKQU E-WALLET] Request URL: %s", url)
+	log.Printf("[LINKQU E-WALLET] Request body: %s", string(jsonData))
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {

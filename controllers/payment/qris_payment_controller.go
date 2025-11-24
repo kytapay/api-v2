@@ -2,9 +2,7 @@ package payment
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -117,12 +115,6 @@ func (qpc *QRISPaymentController) CreateQRIS(c *gin.Context) {
 		})
 		return
 	}
-
-	// Log request
-	reqBodyJSON, _ := json.Marshal(reqBody)
-	log.Printf("[QRIS PAYMENT] Request received: referenceID=%s, amount=%.2f, expiresTime=%v", 
-		reqBody.ReferenceID, reqBody.Amount, reqBody.ExpiresTime)
-	log.Printf("[QRIS PAYMENT] Full request body: %s", string(reqBodyJSON))
 
 	if reqBody.Amount < 500 || reqBody.Amount > 10000000 {
 		c.JSON(http.StatusForbidden, gin.H{

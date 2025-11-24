@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -25,6 +26,10 @@ func (lqs *LinkQuService) BankWithdrawInquiry(bankCode, accountNumber string, am
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to LinkQu
+	log.Printf("[LINKQU BANK WITHDRAW INQUIRY] Request URL: %s", url)
+	log.Printf("[LINKQU BANK WITHDRAW INQUIRY] Request body: %s", string(jsonData))
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -77,6 +82,10 @@ func (lqs *LinkQuService) BankWithdrawPayment(bankCode, accountNumber string, am
 		return nil, err
 	}
 
+	// Log request to LinkQu
+	log.Printf("[LINKQU BANK WITHDRAW PAYMENT] Request URL: %s", url)
+	log.Printf("[LINKQU BANK WITHDRAW PAYMENT] Request body: %s", string(jsonData))
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
@@ -121,6 +130,10 @@ func (lqs *LinkQuService) EWalletReloadInquiry(bankCode, accountNumber string, a
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to LinkQu
+	log.Printf("[LINKQU E-WALLET RELOAD INQUIRY] Request URL: %s", url)
+	log.Printf("[LINKQU E-WALLET RELOAD INQUIRY] Request body: %s", string(jsonData))
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -172,6 +185,10 @@ func (lqs *LinkQuService) EWalletReloadPayment(bankCode, accountNumber string, a
 	if err != nil {
 		return nil, err
 	}
+
+	// Log request to LinkQu
+	log.Printf("[LINKQU E-WALLET RELOAD PAYMENT] Request URL: %s", url)
+	log.Printf("[LINKQU E-WALLET RELOAD PAYMENT] Request body: %s", string(jsonData))
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {

@@ -2,8 +2,6 @@ package payout
 
 import (
 	"database/sql"
-	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -89,11 +87,6 @@ func (pdc *PayoutDetailsController) GetDetail(c *gin.Context) {
 		})
 		return
 	}
-
-	// Log request
-	reqBodyJSON, _ := json.Marshal(reqBody)
-	log.Printf("[PAYOUT DETAILS] Request received: payoutID=%s", reqBody.PayoutID)
-	log.Printf("[PAYOUT DETAILS] Full request body: %s", string(reqBodyJSON))
 
 	// Get transaction info
 	query := `SELECT id, app_id, payment_method, amount, currency, success_url, cancel_url, notify_url, 
