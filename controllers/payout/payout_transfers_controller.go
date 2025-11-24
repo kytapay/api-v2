@@ -2,7 +2,9 @@ package payout
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -182,6 +184,8 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 	// Generate payout ID
 	payoutID := uuid.New().String()
+	log.Printf("[PAYOUT] Starting payout transfer: payoutID=%s, referenceID=%s, amount=%.2f, destination=%s (%s)", 
+		payoutID, reqBody.ReferenceID, reqBody.Amount, reqBody.Destination.Code, reqBody.Destination.AccountNumber)
 
 	// Fee untuk transfer = 2000
 	transferFee := 2000.0
@@ -241,7 +245,12 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 	usePakaiLink := pakaiLinkBalance >= totalNeeded
 	useLinkQu := !usePakaiLink && linkQuBalance >= totalNeeded
 
+	log.Printf("[PAYOUT] Balance check for payout %s: PakaiLink=%.2f, LinkQu=%.2f, needed=%.2f, using=%s", 
+		payoutID, pakaiLinkBalance, linkQuBalance, totalNeeded, map[bool]string{true: "PakaiLink", false: "LinkQu"}[usePakaiLink])
+
 	if !usePakaiLink && !useLinkQu {
+		log.Printf("[PAYOUT] Insufficient balance for payout %s: PakaiLink=%.2f, LinkQu=%.2f, needed=%.2f", 
+			payoutID, pakaiLinkBalance, linkQuBalance, totalNeeded)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"response_code":    "5001001",
 			"response_message": "Internal Server Error",
@@ -384,6 +393,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		if isEWallet {
 			// E-Wallet inquiry
 			productCode := helpers.GetPakaiLinkProductCode(reqBody.Destination.Code)
+			log.Printf("[PAKAILINK E-WALLET] Starting inquiry for payout %s: account=%s, product=%s, amount=%.2f", 
+				payoutID, reqBody.Destination.AccountNumber, productCode, reqBody.Amount)
+			
 			inquiryResponse, err := ptc.pakaiLinkService.EWalletAccountInquiry(
 				payoutID,
 				reqBody.Destination.AccountNumber,
@@ -391,6 +403,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				reqBody.Amount,
 			)
 			if err != nil {
+				log.Printf("[PAKAILINK E-WALLET] Inquiry failed for payout %s: %v", payoutID, err)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -398,8 +411,12 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			inquiryResponseJSON, _ := json.Marshal(inquiryResponse)
+			log.Printf("[PAKAILINK E-WALLET] Inquiry response for payout %s: %s", payoutID, string(inquiryResponseJSON))
+
 			responseCode, _ := inquiryResponse["responseCode"].(string)
 			if responseCode != "2003700" {
+				log.Printf("[PAKAILINK E-WALLET] Inquiry response code not success for payout %s: %s", payoutID, responseCode)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -409,6 +426,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			sessionId, _ = inquiryResponse["sessionId"].(string)
 			if sessionId == "" {
+				log.Printf("[PAKAILINK E-WALLET] Missing sessionId in inquiry response for payout %s", payoutID)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -416,9 +434,14 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			log.Printf("[PAKAILINK E-WALLET] Inquiry success for payout %s, sessionId=%s, starting payment", payoutID, sessionId)
+
 			// E-Wallet transfer
 			pakaiLinkConfig := config.GetPakaiLinkConfig()
 			callbackURL := fmt.Sprintf("%s/payouts/pakailink/ewallet", pakaiLinkConfig.CallbackURL)
+			log.Printf("[PAKAILINK E-WALLET] Starting payment for payout %s: sessionId=%s, callbackURL=%s", 
+				payoutID, sessionId, callbackURL)
+			
 			responseData, err = ptc.pakaiLinkService.TopupEWallet(
 				payoutID,
 				reqBody.Destination.AccountNumber,
@@ -430,6 +453,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		} else {
 			// Bank inquiry
 			bankCode := helpers.GetPakaiLinkBankCode(reqBody.Destination.Code)
+			log.Printf("[PAKAILINK BANK] Starting inquiry for payout %s: account=%s, bank=%s, amount=%.2f", 
+				payoutID, reqBody.Destination.AccountNumber, bankCode, reqBody.Amount)
+			
 			inquiryResponse, err := ptc.pakaiLinkService.BankAccountInquiry(
 				payoutID,
 				reqBody.Destination.AccountNumber,
@@ -437,6 +463,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				reqBody.Amount,
 			)
 			if err != nil {
+				log.Printf("[PAKAILINK BANK] Inquiry failed for payout %s: %v", payoutID, err)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -444,8 +471,12 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			inquiryResponseJSON, _ := json.Marshal(inquiryResponse)
+			log.Printf("[PAKAILINK BANK] Inquiry response for payout %s: %s", payoutID, string(inquiryResponseJSON))
+
 			responseCode, _ := inquiryResponse["responseCode"].(string)
 			if responseCode != "2004200" {
+				log.Printf("[PAKAILINK BANK] Inquiry response code not success for payout %s: %s", payoutID, responseCode)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -455,6 +486,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			sessionId, _ = inquiryResponse["sessionId"].(string)
 			if sessionId == "" {
+				log.Printf("[PAKAILINK BANK] Missing sessionId in inquiry response for payout %s", payoutID)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -462,9 +494,14 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			log.Printf("[PAKAILINK BANK] Inquiry success for payout %s, sessionId=%s, starting payment", payoutID, sessionId)
+
 			// Bank transfer
 			pakaiLinkConfig := config.GetPakaiLinkConfig()
 			callbackURL := fmt.Sprintf("%s/payouts/pakailink/bank", pakaiLinkConfig.CallbackURL)
+			log.Printf("[PAKAILINK BANK] Starting payment for payout %s: sessionId=%s, callbackURL=%s", 
+				payoutID, sessionId, callbackURL)
+			
 			responseData, err = ptc.pakaiLinkService.TransferBank(
 				payoutID,
 				reqBody.Destination.AccountNumber,
@@ -484,19 +521,28 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		// We only log the error but don't fail the request
 		if err != nil {
 			// Log error but continue - webhook will handle status update
-			fmt.Printf("[WARNING] PakaiLink API call failed for payout %s: %v\n", payoutID, err)
+			log.Printf("[PAKAILINK %s] Payment API call failed for payout %s: %v", 
+				map[bool]string{true: "E-WALLET", false: "BANK"}[isEWallet], payoutID, err)
 		} else {
+			responseDataJSON, _ := json.Marshal(responseData)
+			log.Printf("[PAKAILINK %s] Payment response for payout %s: %s", 
+				map[bool]string{true: "E-WALLET", false: "BANK"}[isEWallet], payoutID, string(responseDataJSON))
+			
 			// Check PakaiLink response
 			responseCode, _ := responseData["responseCode"].(string)
 			if isEWallet {
 				if responseCode != "2003800" {
 					// Log warning but continue - webhook will handle status update
-					fmt.Printf("[WARNING] PakaiLink E-Wallet response not success for payout %s: %s\n", payoutID, responseCode)
+					log.Printf("[PAKAILINK E-WALLET] Payment response code not success for payout %s: %s (expected 2003800)", payoutID, responseCode)
+				} else {
+					log.Printf("[PAKAILINK E-WALLET] Payment success for payout %s", payoutID)
 				}
 			} else {
 				if responseCode != "2004300" {
 					// Log warning but continue - webhook will handle status update
-					fmt.Printf("[WARNING] PakaiLink Bank response not success for payout %s: %s\n", payoutID, responseCode)
+					log.Printf("[PAKAILINK BANK] Payment response code not success for payout %s: %s (expected 2004300)", payoutID, responseCode)
+				} else {
+					log.Printf("[PAKAILINK BANK] Payment success for payout %s", payoutID)
 				}
 			}
 		}
@@ -505,12 +551,16 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		if isEWallet {
 			// E-Wallet inquiry
 			ewalletCode := helpers.GetLinkQuEWalletCode(reqBody.Destination.Code)
+			log.Printf("[LINKQU E-WALLET] Starting inquiry for payout %s: account=%s, ewallet=%s, amount=%d", 
+				payoutID, reqBody.Destination.AccountNumber, ewalletCode, int64(reqBody.Amount))
+			
 			inquiryResponse, err := ptc.linkQuService.EWalletReloadInquiry(
 				ewalletCode,
 				reqBody.Destination.AccountNumber,
 				int64(reqBody.Amount),
 			)
 			if err != nil {
+				log.Printf("[LINKQU E-WALLET] Inquiry failed for payout %s: %v", payoutID, err)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -518,9 +568,14 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			inquiryResponseJSON, _ := json.Marshal(inquiryResponse)
+			log.Printf("[LINKQU E-WALLET] Inquiry response for payout %s: %s", payoutID, string(inquiryResponseJSON))
+
 			status, _ := inquiryResponse["status"].(string)
 			responseCode, _ := inquiryResponse["response_code"].(string)
 			if status != "SUCCESS" || responseCode != "00" {
+				log.Printf("[LINKQU E-WALLET] Inquiry response not success for payout %s: status=%s, response_code=%s", 
+					payoutID, status, responseCode)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -530,6 +585,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			inquiryRef = inquiryResponse["inquiry_reff"]
 			if inquiryRef == nil {
+				log.Printf("[LINKQU E-WALLET] Missing inquiry_reff in response for payout %s", payoutID)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -537,10 +593,15 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			log.Printf("[LINKQU E-WALLET] Inquiry success for payout %s, inquiry_reff=%v, starting payment", payoutID, inquiryRef)
+
 			// E-Wallet transfer
 			linkQuConfig := config.GetLinkQuConfig()
 			callbackURL := fmt.Sprintf("%s/payouts/linkqu/ewallet", linkQuConfig.CallbackURL)
 			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
+			log.Printf("[LINKQU E-WALLET] Starting payment for payout %s: inquiry_reff=%s, callbackURL=%s", 
+				payoutID, inquiryRefStr, callbackURL)
+			
 			responseData, err = ptc.linkQuService.EWalletReloadPayment(
 				ewalletCode,
 				reqBody.Destination.AccountNumber,
@@ -552,6 +613,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		} else {
 			// Bank inquiry
 			bankCode := helpers.GetLinkQuBankCode(reqBody.Destination.Code)
+			log.Printf("[LINKQU BANK] Starting inquiry for payout %s: account=%s, bank=%s, amount=%d", 
+				payoutID, reqBody.Destination.AccountNumber, bankCode, int64(reqBody.Amount))
+			
 			inquiryResponse, err := ptc.linkQuService.BankWithdrawInquiry(
 				bankCode,
 				reqBody.Destination.AccountNumber,
@@ -559,6 +623,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				payoutID,
 			)
 			if err != nil {
+				log.Printf("[LINKQU BANK] Inquiry failed for payout %s: %v", payoutID, err)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -566,9 +631,14 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			inquiryResponseJSON, _ := json.Marshal(inquiryResponse)
+			log.Printf("[LINKQU BANK] Inquiry response for payout %s: %s", payoutID, string(inquiryResponseJSON))
+
 			status, _ := inquiryResponse["status"].(string)
 			responseCode, _ := inquiryResponse["response_code"].(string)
 			if status != "SUCCESS" || responseCode != "00" {
+				log.Printf("[LINKQU BANK] Inquiry response not success for payout %s: status=%s, response_code=%s", 
+					payoutID, status, responseCode)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -578,6 +648,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 			inquiryRef = inquiryResponse["inquiry_reff"]
 			if inquiryRef == nil {
+				log.Printf("[LINKQU BANK] Missing inquiry_reff in response for payout %s", payoutID)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -585,10 +656,15 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				return
 			}
 
+			log.Printf("[LINKQU BANK] Inquiry success for payout %s, inquiry_reff=%v, starting payment", payoutID, inquiryRef)
+
 			// Bank transfer
 			linkQuConfig := config.GetLinkQuConfig()
 			callbackURL := fmt.Sprintf("%s/payouts/linkqu/bank", linkQuConfig.CallbackURL)
 			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
+			log.Printf("[LINKQU BANK] Starting payment for payout %s: inquiry_reff=%s, callbackURL=%s", 
+				payoutID, inquiryRefStr, callbackURL)
+			
 			responseData, err = ptc.linkQuService.BankWithdrawPayment(
 				bankCode,
 				reqBody.Destination.AccountNumber,
@@ -607,14 +683,23 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		// We only log the error but don't fail the request
 		if err != nil {
 			// Log error but continue - webhook will handle status update
-			fmt.Printf("[WARNING] LinkQu API call failed for payout %s: %v\n", payoutID, err)
+			log.Printf("[LINKQU %s] Payment API call failed for payout %s: %v", 
+				map[bool]string{true: "E-WALLET", false: "BANK"}[isEWallet], payoutID, err)
 		} else {
+			responseDataJSON, _ := json.Marshal(responseData)
+			log.Printf("[LINKQU %s] Payment response for payout %s: %s", 
+				map[bool]string{true: "E-WALLET", false: "BANK"}[isEWallet], payoutID, string(responseDataJSON))
+			
 			// Check LinkQu response
 			status, _ := responseData["status"].(string)
 			responseCode, _ := responseData["response_code"].(string)
 			if status != "SUCCESS" || responseCode != "00" {
 				// Log warning but continue - webhook will handle status update
-				fmt.Printf("[WARNING] LinkQu response not success for payout %s: status=%s, response_code=%s\n", payoutID, status, responseCode)
+				log.Printf("[LINKQU %s] Payment response not success for payout %s: status=%s, response_code=%s (expected SUCCESS/00)", 
+					map[bool]string{true: "E-WALLET", false: "BANK"}[isEWallet], payoutID, status, responseCode)
+			} else {
+				log.Printf("[LINKQU %s] Payment success for payout %s", 
+					map[bool]string{true: "E-WALLET", false: "BANK"}[isEWallet], payoutID)
 			}
 		}
 	}
@@ -639,6 +724,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		loc = time.UTC
 	}
 	requestTime := time.Now().In(loc).Format(time.RFC3339)
+
+	log.Printf("[PAYOUT] Successfully processed payout %s: referenceID=%s, amount=%.2f, provider=%s", 
+		payoutID, reqBody.ReferenceID, reqBody.Amount, map[bool]string{true: "PakaiLink", false: "LinkQu"}[usePakaiLink])
 
 	c.JSON(http.StatusOK, gin.H{
 		"response_code":    "2001000",
