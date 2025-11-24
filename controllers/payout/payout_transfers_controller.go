@@ -477,9 +477,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		}
 
 		if err != nil {
-			// Update transaction status to Failed if API call fails
-			ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
-			ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+			// Don't update status to Failed - keep as Pending
+			// Webhook callback will determine final status
+			// Money might still be sent even if API call fails
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"response_code":    "5001001",
 				"response_message": "Internal Server Error",
@@ -491,9 +491,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		responseCode, _ := responseData["responseCode"].(string)
 		if isEWallet {
 			if responseCode != "2003800" {
-				// Update transaction status to Failed if API response is not success
-				ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
-				ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+				// Don't update status to Failed - keep as Pending
+				// Webhook callback will determine final status
+				// Money might still be sent even if API response is not success
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -502,9 +502,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 			}
 		} else {
 			if responseCode != "2004300" {
-				// Update transaction status to Failed if API response is not success
-				ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
-				ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+				// Don't update status to Failed - keep as Pending
+				// Webhook callback will determine final status
+				// Money might still be sent even if API response is not success
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"response_code":    "5001001",
 					"response_message": "Internal Server Error",
@@ -612,9 +612,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		}
 
 		if err != nil {
-			// Update transaction status to Failed if API call fails
-			ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
-			ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+			// Don't update status to Failed - keep as Pending
+			// Webhook callback will determine final status
+			// Money might still be sent even if API call fails
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"response_code":    "5001001",
 				"response_message": "Internal Server Error",
@@ -626,9 +626,9 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		status, _ := responseData["status"].(string)
 		responseCode, _ := responseData["response_code"].(string)
 		if status != "SUCCESS" || responseCode != "00" {
-			// Update transaction status to Failed if API response is not success
-			ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
-			ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+			// Don't update status to Failed - keep as Pending
+			// Webhook callback will determine final status
+			// Money might still be sent even if API response is not success
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"response_code":    "5001001",
 				"response_message": "Internal Server Error",
