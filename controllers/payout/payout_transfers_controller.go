@@ -476,40 +476,28 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 			)
 		}
 
+		// Note: Even if API call fails or response is not success,
+		// we still return success because:
+		// 1. Transaction is already created in database
+		// 2. Money might still be sent by payment gateway
+		// 3. Webhook callback will determine final status
+		// We only log the error but don't fail the request
 		if err != nil {
-			// Don't update status to Failed - keep as Pending
-			// Webhook callback will determine final status
-			// Money might still be sent even if API call fails
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"response_code":    "5001001",
-				"response_message": "Internal Server Error",
-			})
-			return
-		}
-
-		// Check PakaiLink response
-		responseCode, _ := responseData["responseCode"].(string)
-		if isEWallet {
-			if responseCode != "2003800" {
-				// Don't update status to Failed - keep as Pending
-				// Webhook callback will determine final status
-				// Money might still be sent even if API response is not success
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
+			// Log error but continue - webhook will handle status update
+			fmt.Printf("[WARNING] PakaiLink API call failed for payout %s: %v\n", payoutID, err)
 		} else {
-			if responseCode != "2004300" {
-				// Don't update status to Failed - keep as Pending
-				// Webhook callback will determine final status
-				// Money might still be sent even if API response is not success
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
+			// Check PakaiLink response
+			responseCode, _ := responseData["responseCode"].(string)
+			if isEWallet {
+				if responseCode != "2003800" {
+					// Log warning but continue - webhook will handle status update
+					fmt.Printf("[WARNING] PakaiLink E-Wallet response not success for payout %s: %s\n", payoutID, responseCode)
+				}
+			} else {
+				if responseCode != "2004300" {
+					// Log warning but continue - webhook will handle status update
+					fmt.Printf("[WARNING] PakaiLink Bank response not success for payout %s: %s\n", payoutID, responseCode)
+				}
 			}
 		}
 	} else {
@@ -611,29 +599,23 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 			)
 		}
 
+		// Note: Even if API call fails or response is not success,
+		// we still return success because:
+		// 1. Transaction is already created in database
+		// 2. Money might still be sent by payment gateway
+		// 3. Webhook callback will determine final status
+		// We only log the error but don't fail the request
 		if err != nil {
-			// Don't update status to Failed - keep as Pending
-			// Webhook callback will determine final status
-			// Money might still be sent even if API call fails
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"response_code":    "5001001",
-				"response_message": "Internal Server Error",
-			})
-			return
-		}
-
-		// Check LinkQu response
-		status, _ := responseData["status"].(string)
-		responseCode, _ := responseData["response_code"].(string)
-		if status != "SUCCESS" || responseCode != "00" {
-			// Don't update status to Failed - keep as Pending
-			// Webhook callback will determine final status
-			// Money might still be sent even if API response is not success
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"response_code":    "5001001",
-				"response_message": "Internal Server Error",
-			})
-			return
+			// Log error but continue - webhook will handle status update
+			fmt.Printf("[WARNING] LinkQu API call failed for payout %s: %v\n", payoutID, err)
+		} else {
+			// Check LinkQu response
+			status, _ := responseData["status"].(string)
+			responseCode, _ := responseData["response_code"].(string)
+			if status != "SUCCESS" || responseCode != "00" {
+				// Log warning but continue - webhook will handle status update
+				fmt.Printf("[WARNING] LinkQu response not success for payout %s: status=%s, response_code=%s\n", payoutID, status, responseCode)
+			}
 		}
 	}
 
