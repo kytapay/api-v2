@@ -258,253 +258,8 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 		destinationCodeUpper == "SHOPEEPAY" ||
 		strings.ToUpper(paymentMethod.Type) == "EWALLET"
 
-	var responseData map[string]interface{}
-	var sessionId string
-	var inquiryRef interface{}
-
-	if usePakaiLink {
-		// PakaiLink: 2 fase - inquiry dulu
-		if isEWallet {
-			// E-Wallet inquiry
-			productCode := helpers.GetPakaiLinkProductCode(reqBody.Destination.Code)
-			inquiryResponse, err := ptc.pakaiLinkService.EWalletAccountInquiry(
-				payoutID,
-				reqBody.Destination.AccountNumber,
-				productCode,
-				reqBody.Amount,
-			)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			responseCode, _ := inquiryResponse["responseCode"].(string)
-			if responseCode != "2003700" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			sessionId, _ = inquiryResponse["sessionId"].(string)
-			if sessionId == "" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			// E-Wallet transfer
-			pakaiLinkConfig := config.GetPakaiLinkConfig()
-			callbackURL := fmt.Sprintf("%s/payouts/pakailink/ewallet", pakaiLinkConfig.CallbackURL)
-			responseData, err = ptc.pakaiLinkService.TopupEWallet(
-				payoutID,
-				reqBody.Destination.AccountNumber,
-				productCode,
-				sessionId,
-				reqBody.Amount,
-				callbackURL,
-			)
-		} else {
-			// Bank inquiry
-			bankCode := helpers.GetPakaiLinkBankCode(reqBody.Destination.Code)
-			inquiryResponse, err := ptc.pakaiLinkService.BankAccountInquiry(
-				payoutID,
-				reqBody.Destination.AccountNumber,
-				bankCode,
-				reqBody.Amount,
-			)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			responseCode, _ := inquiryResponse["responseCode"].(string)
-			if responseCode != "2004200" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			sessionId, _ = inquiryResponse["sessionId"].(string)
-			if sessionId == "" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			// Bank transfer
-			pakaiLinkConfig := config.GetPakaiLinkConfig()
-			callbackURL := fmt.Sprintf("%s/payouts/pakailink/bank", pakaiLinkConfig.CallbackURL)
-			responseData, err = ptc.pakaiLinkService.TransferBank(
-				payoutID,
-				reqBody.Destination.AccountNumber,
-				bankCode,
-				sessionId,
-				reqBody.Amount,
-				callbackURL,
-				reqBody.Description,
-			)
-		}
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"response_code":    "5001001",
-				"response_message": "Internal Server Error",
-			})
-			return
-		}
-
-		// Check PakaiLink response
-		responseCode, _ := responseData["responseCode"].(string)
-		if isEWallet {
-			if responseCode != "2003800" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-		} else {
-			if responseCode != "2004300" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-		}
-	} else {
-		// LinkQu: 2 fase - inquiry dulu
-		if isEWallet {
-			// E-Wallet inquiry
-			ewalletCode := helpers.GetLinkQuEWalletCode(reqBody.Destination.Code)
-			inquiryResponse, err := ptc.linkQuService.EWalletReloadInquiry(
-				ewalletCode,
-				reqBody.Destination.AccountNumber,
-				int64(reqBody.Amount),
-			)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			status, _ := inquiryResponse["status"].(string)
-			responseCode, _ := inquiryResponse["response_code"].(string)
-			if status != "SUCCESS" || responseCode != "00" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			inquiryRef = inquiryResponse["inquiry_reff"]
-			if inquiryRef == nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			// E-Wallet transfer
-			linkQuConfig := config.GetLinkQuConfig()
-			callbackURL := fmt.Sprintf("%s/payouts/linkqu/ewallet", linkQuConfig.CallbackURL)
-			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
-			responseData, err = ptc.linkQuService.EWalletReloadPayment(
-				ewalletCode,
-				reqBody.Destination.AccountNumber,
-				int64(reqBody.Amount),
-				payoutID,
-				inquiryRefStr,
-				callbackURL,
-			)
-		} else {
-			// Bank inquiry
-			bankCode := helpers.GetLinkQuBankCode(reqBody.Destination.Code)
-			inquiryResponse, err := ptc.linkQuService.BankWithdrawInquiry(
-				bankCode,
-				reqBody.Destination.AccountNumber,
-				int64(reqBody.Amount),
-				payoutID,
-			)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			status, _ := inquiryResponse["status"].(string)
-			responseCode, _ := inquiryResponse["response_code"].(string)
-			if status != "SUCCESS" || responseCode != "00" {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			inquiryRef = inquiryResponse["inquiry_reff"]
-			if inquiryRef == nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"response_code":    "5001001",
-					"response_message": "Internal Server Error",
-				})
-				return
-			}
-
-			// Bank transfer
-			linkQuConfig := config.GetLinkQuConfig()
-			callbackURL := fmt.Sprintf("%s/payouts/linkqu/bank", linkQuConfig.CallbackURL)
-			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
-			responseData, err = ptc.linkQuService.BankWithdrawPayment(
-				bankCode,
-				reqBody.Destination.AccountNumber,
-				int64(reqBody.Amount),
-				payoutID,
-				inquiryRefStr,
-				callbackURL,
-			)
-		}
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"response_code":    "5001001",
-				"response_message": "Internal Server Error",
-			})
-			return
-		}
-
-		// Check LinkQu response
-		status, _ := responseData["status"].(string)
-		responseCode, _ := responseData["response_code"].(string)
-		if status != "SUCCESS" || responseCode != "00" {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"response_code":    "5001001",
-				"response_message": "Internal Server Error",
-			})
-			return
-		}
-	}
-
+	// CRITICAL: Create all database records BEFORE calling payment API
+	// This ensures transaction exists even if API call fails
 	// Create transaction info
 	transactionData := models.TransactionInfoData{
 		AppID:         tokenData.AppID,
@@ -612,6 +367,279 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 
 	err = ptc.callbackRepo.CreateCallback(callbackData)
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"response_code":    "5001001",
+			"response_message": "Internal Server Error",
+		})
+		return
+	}
+
+	// Now proceed with API calls - transaction already exists in DB
+	var responseData map[string]interface{}
+	var sessionId string
+	var inquiryRef interface{}
+
+	if usePakaiLink {
+		// PakaiLink: 2 fase - inquiry dulu
+		if isEWallet {
+			// E-Wallet inquiry
+			productCode := helpers.GetPakaiLinkProductCode(reqBody.Destination.Code)
+			inquiryResponse, err := ptc.pakaiLinkService.EWalletAccountInquiry(
+				payoutID,
+				reqBody.Destination.AccountNumber,
+				productCode,
+				reqBody.Amount,
+			)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			responseCode, _ := inquiryResponse["responseCode"].(string)
+			if responseCode != "2003700" {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			sessionId, _ = inquiryResponse["sessionId"].(string)
+			if sessionId == "" {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			// E-Wallet transfer
+			pakaiLinkConfig := config.GetPakaiLinkConfig()
+			callbackURL := fmt.Sprintf("%s/payouts/pakailink/ewallet", pakaiLinkConfig.CallbackURL)
+			responseData, err = ptc.pakaiLinkService.TopupEWallet(
+				payoutID,
+				reqBody.Destination.AccountNumber,
+				productCode,
+				sessionId,
+				reqBody.Amount,
+				callbackURL,
+			)
+		} else {
+			// Bank inquiry
+			bankCode := helpers.GetPakaiLinkBankCode(reqBody.Destination.Code)
+			inquiryResponse, err := ptc.pakaiLinkService.BankAccountInquiry(
+				payoutID,
+				reqBody.Destination.AccountNumber,
+				bankCode,
+				reqBody.Amount,
+			)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			responseCode, _ := inquiryResponse["responseCode"].(string)
+			if responseCode != "2004200" {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			sessionId, _ = inquiryResponse["sessionId"].(string)
+			if sessionId == "" {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			// Bank transfer
+			pakaiLinkConfig := config.GetPakaiLinkConfig()
+			callbackURL := fmt.Sprintf("%s/payouts/pakailink/bank", pakaiLinkConfig.CallbackURL)
+			responseData, err = ptc.pakaiLinkService.TransferBank(
+				payoutID,
+				reqBody.Destination.AccountNumber,
+				bankCode,
+				sessionId,
+				reqBody.Amount,
+				callbackURL,
+				reqBody.Description,
+			)
+		}
+
+		if err != nil {
+			// Update transaction status to Failed if API call fails
+			ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
+			ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"response_code":    "5001001",
+				"response_message": "Internal Server Error",
+			})
+			return
+		}
+
+		// Check PakaiLink response
+		responseCode, _ := responseData["responseCode"].(string)
+		if isEWallet {
+			if responseCode != "2003800" {
+				// Update transaction status to Failed if API response is not success
+				ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
+				ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+		} else {
+			if responseCode != "2004300" {
+				// Update transaction status to Failed if API response is not success
+				ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
+				ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+		}
+	} else {
+		// LinkQu: 2 fase - inquiry dulu
+		if isEWallet {
+			// E-Wallet inquiry
+			ewalletCode := helpers.GetLinkQuEWalletCode(reqBody.Destination.Code)
+			inquiryResponse, err := ptc.linkQuService.EWalletReloadInquiry(
+				ewalletCode,
+				reqBody.Destination.AccountNumber,
+				int64(reqBody.Amount),
+			)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			status, _ := inquiryResponse["status"].(string)
+			responseCode, _ := inquiryResponse["response_code"].(string)
+			if status != "SUCCESS" || responseCode != "00" {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			inquiryRef = inquiryResponse["inquiry_reff"]
+			if inquiryRef == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			// E-Wallet transfer
+			linkQuConfig := config.GetLinkQuConfig()
+			callbackURL := fmt.Sprintf("%s/payouts/linkqu/ewallet", linkQuConfig.CallbackURL)
+			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
+			responseData, err = ptc.linkQuService.EWalletReloadPayment(
+				ewalletCode,
+				reqBody.Destination.AccountNumber,
+				int64(reqBody.Amount),
+				payoutID,
+				inquiryRefStr,
+				callbackURL,
+			)
+		} else {
+			// Bank inquiry
+			bankCode := helpers.GetLinkQuBankCode(reqBody.Destination.Code)
+			inquiryResponse, err := ptc.linkQuService.BankWithdrawInquiry(
+				bankCode,
+				reqBody.Destination.AccountNumber,
+				int64(reqBody.Amount),
+				payoutID,
+			)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			status, _ := inquiryResponse["status"].(string)
+			responseCode, _ := inquiryResponse["response_code"].(string)
+			if status != "SUCCESS" || responseCode != "00" {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			inquiryRef = inquiryResponse["inquiry_reff"]
+			if inquiryRef == nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"response_code":    "5001001",
+					"response_message": "Internal Server Error",
+				})
+				return
+			}
+
+			// Bank transfer
+			linkQuConfig := config.GetLinkQuConfig()
+			callbackURL := fmt.Sprintf("%s/payouts/linkqu/bank", linkQuConfig.CallbackURL)
+			inquiryRefStr := fmt.Sprintf("%v", inquiryRef)
+			responseData, err = ptc.linkQuService.BankWithdrawPayment(
+				bankCode,
+				reqBody.Destination.AccountNumber,
+				int64(reqBody.Amount),
+				payoutID,
+				inquiryRefStr,
+				callbackURL,
+			)
+		}
+
+		if err != nil {
+			// Update transaction status to Failed if API call fails
+			ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
+			ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"response_code":    "5001001",
+				"response_message": "Internal Server Error",
+			})
+			return
+		}
+
+		// Check LinkQu response
+		status, _ := responseData["status"].(string)
+		responseCode, _ := responseData["response_code"].(string)
+		if status != "SUCCESS" || responseCode != "00" {
+			// Update transaction status to Failed if API response is not success
+			ptc.transactionRepo.UpdateTransaction(payoutID, map[string]interface{}{"status": "failed"})
+			ptc.merchantPayoutRepo.UpdateMerchantPayout(payoutID, map[string]interface{}{"status": "Failed"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"response_code":    "5001001",
+				"response_message": "Internal Server Error",
+			})
+			return
+		}
+	}
+
+	// Get transaction info for response (already created above)
+	transactionInfo, err = ptc.helper.GetTransactionInfoByGrantID(payoutID)
+	if err != nil || transactionInfo == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"response_code":    "5001001",
 			"response_message": "Internal Server Error",
