@@ -3,6 +3,7 @@ package payout
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -95,6 +96,12 @@ func (pic *PayoutInquiryController) ProcessInquiry(c *gin.Context) {
 		})
 		return
 	}
+
+	// Log request
+	reqBodyJSON, _ := json.Marshal(reqBody)
+	log.Printf("[PAYOUT INQUIRY] Request received: referenceID=%s, destinationCode=%s, accountNumber=%s", 
+		reqBody.ReferenceID, reqBody.Destination.Code, reqBody.Destination.AccountNumber)
+	log.Printf("[PAYOUT INQUIRY] Full request body: %s", string(reqBodyJSON))
 
 	if reqBody.Destination.Code == "" || reqBody.Destination.AccountNumber == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
