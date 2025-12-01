@@ -429,7 +429,7 @@ Copy isi dari `deploy/nginx/kytapay-api.conf` atau isi dengan:
 ```nginx
 server {
     listen 80;
-    server_name api.kytapay.com;
+    server_name api-v2.kytapay.com;
 
     # Logging
     access_log /var/log/nginx/kytapay-api-access.log;
@@ -484,7 +484,7 @@ sudo systemctl reload nginx
 ### 1. Install SSL
 
 ```bash
-sudo certbot --nginx -d api.kytapay.com
+sudo certbot --nginx -d api-v2.kytapay.com
 ```
 
 Ikuti instruksi:
