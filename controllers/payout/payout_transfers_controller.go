@@ -534,7 +534,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				int64(reqBody.Amount),
 			)
 			if err != nil {
-				log.Printf("[LINKQU E-WALLET] Inquiry failed for payout %s: %v", payoutID, err)
+				log.Printf("[LINKQU E-WALLET] Inquiry API call failed for payout %s: %v", payoutID, err)
 				linkQuFailed = true
 			} else {
 				inquiryResponseJSON, _ := json.Marshal(inquiryResponse)
@@ -570,7 +570,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 							callbackURL,
 						)
 						if err != nil {
-							log.Printf("[LINKQU E-WALLET] Payment failed for payout %s: %v", payoutID, err)
+							log.Printf("[LINKQU E-WALLET] Payment API call failed for payout %s: %v", payoutID, err)
 							linkQuFailed = true
 						} else {
 							responseDataJSON, _ := json.Marshal(responseData)
@@ -579,9 +579,11 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 							status, _ := responseData["status"].(string)
 							responseCode, _ := responseData["response_code"].(string)
 							if status != "SUCCESS" || responseCode != "00" {
-								log.Printf("[LINKQU E-WALLET] Payment response not success for payout %s: status=%s, response_code=%s (expected SUCCESS/00)",
+								// Log warning but continue - webhook will handle status update
+								// Money might still be sent even if response code is not success
+								log.Printf("[LINKQU E-WALLET] Payment response code not success for payout %s: status=%s, response_code=%s (expected SUCCESS/00), but continuing - webhook will determine final status",
 									payoutID, status, responseCode)
-								linkQuFailed = true
+								providerUsed = "LinkQu"
 							} else {
 								log.Printf("[LINKQU E-WALLET] Payment success for payout %s", payoutID)
 								providerUsed = "LinkQu"
@@ -603,7 +605,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 				payoutID,
 			)
 			if err != nil {
-				log.Printf("[LINKQU BANK] Inquiry failed for payout %s: %v", payoutID, err)
+				log.Printf("[LINKQU BANK] Inquiry API call failed for payout %s: %v", payoutID, err)
 				linkQuFailed = true
 			} else {
 				inquiryResponseJSON, _ := json.Marshal(inquiryResponse)
@@ -639,7 +641,7 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 							callbackURL,
 						)
 						if err != nil {
-							log.Printf("[LINKQU BANK] Payment failed for payout %s: %v", payoutID, err)
+							log.Printf("[LINKQU BANK] Payment API call failed for payout %s: %v", payoutID, err)
 							linkQuFailed = true
 						} else {
 							responseDataJSON, _ := json.Marshal(responseData)
@@ -648,9 +650,11 @@ func (ptc *PayoutTransfersController) ProcessPayout(c *gin.Context) {
 							status, _ := responseData["status"].(string)
 							responseCode, _ := responseData["response_code"].(string)
 							if status != "SUCCESS" || responseCode != "00" {
-								log.Printf("[LINKQU BANK] Payment response not success for payout %s: status=%s, response_code=%s (expected SUCCESS/00)",
+								// Log warning but continue - webhook will handle status update
+								// Money might still be sent even if response code is not success
+								log.Printf("[LINKQU BANK] Payment response code not success for payout %s: status=%s, response_code=%s (expected SUCCESS/00), but continuing - webhook will determine final status",
 									payoutID, status, responseCode)
-								linkQuFailed = true
+								providerUsed = "LinkQu"
 							} else {
 								log.Printf("[LINKQU BANK] Payment success for payout %s", payoutID)
 								providerUsed = "LinkQu"
